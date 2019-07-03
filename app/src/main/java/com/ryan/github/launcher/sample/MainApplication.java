@@ -26,7 +26,12 @@ public class MainApplication extends Application {
                 .addTask(new SimpleLauncherTask4())
                 .addTask(new SimpleLauncherTask6())
                 .addTask(new SimpleLauncherTask5())
-                .finishedHandler(new IdleHandler() {
+                .addHeadTask(new SimpleLauncherTask8())
+                .addTailTask(new SimpleLauncherTask9())
+                .addHeadTask(new SimpleLauncherTask10())
+                .addHeadTask(new SimpleLauncherTask11())
+                .addTailTask(new SimpleLauncherTask12())
+                .idleHandler(new IdleHandler() {
                     @Override
                     public void onIdle() {
                         Log.v(TAG, "onIdle");
@@ -34,5 +39,6 @@ public class MainApplication extends Application {
                 }).start();
         launcher.breakPoint();
         Log.v(TAG, "onCreate Finished.");
+        launcher.shutdown();
     }
 }

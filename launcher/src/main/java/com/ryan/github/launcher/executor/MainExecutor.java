@@ -26,4 +26,9 @@ public class MainExecutor implements TaskExecutor {
     public void execute(Runnable runnable) {
         mMainHandler.post(runnable);
     }
+
+    @Override
+    public void shutdown() {
+
+    }
 }

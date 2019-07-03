@@ -1,6 +1,5 @@
 package com.ryan.github.launcher.task;
 
-import com.ryan.github.launcher.AppLauncher;
 import com.ryan.github.launcher.IAppLauncher;
 import com.ryan.github.launcher.executor.Schedulers;
 
@@ -10,19 +9,21 @@ import java.util.List;
  * Created by Ryan
  * at 2019/7/1
  */
-public interface ILauncherTask extends Runnable {
+public interface ILaunchTask extends Runnable {
 
-    List<Class<? extends ILauncherTask>> dependsOn();
+    List<Class<? extends ILaunchTask>> dependsOn();
 
     Schedulers runOn();
 
     void satisfy();
 
-    void addChildTask(ILauncherTask task);
+    void addChildTask(ILaunchTask task);
 
     boolean mustFinishBeforeBreakPoint();
 
     void attachContext(IAppLauncher launcher);
 
     boolean isFinished();
+
+    void updateDependsCount(int count);
 }

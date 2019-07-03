@@ -17,7 +17,7 @@ public class IOExecutor implements TaskExecutor {
     private static final String IO_THREAD_PREFIX = "launcher-io-";
     private static final int CORE_POOL_SIZE = Runtime.getRuntime().availableProcessors() * 2;
     private AtomicInteger mName = new AtomicInteger(0);
-    private ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
+    private ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
         @Override
         public Thread newThread(@NonNull Runnable r) {
             return new Thread(r, IO_THREAD_PREFIX + mName.incrementAndGet());
@@ -33,10 +33,16 @@ public class IOExecutor implements TaskExecutor {
     }
 
     private IOExecutor() {
+        mExecutor.allowCoreThreadTimeOut(true);
     }
 
     @Override
     public void execute(Runnable runnable) {
         mExecutor.execute(runnable);
+    }
+
+    @Override
+    public void shutdown() {
+        mExecutor.shutdown();
     }
 }

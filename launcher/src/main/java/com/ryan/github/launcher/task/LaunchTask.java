@@ -13,24 +13,20 @@ import java.util.concurrent.CountDownLatch;
  * Created by Ryan
  * at 2019/7/1
  */
-public abstract class LauncherTask implements ILauncherTask {
+public abstract class LaunchTask implements ILaunchTask {
 
     private static final int STATE_CREATE = 0;
     private static final int STATE_WAITING = 1;
     private static final int STATE_RUNNING = 2;
     private static final int STATE_FINISHED = 3;
 
-    private final Set<ILauncherTask> mChildTask;
-    private CountDownLatch mWaitingLatch;
-    private IAppLauncher mLauncher;
+    private final Set<ILaunchTask> mChildTask;
+    private CountDownLatch mDependsOnLatch;
+    private IAppLauncher mContextLauncher;
     private int mState = STATE_CREATE;
 
-    public LauncherTask() {
+    public LaunchTask() {
         mChildTask = new HashSet<>();
-        int dependsOnSize = dependsOn() == null ? 0 : dependsOn().size();
-        if (dependsOnSize > 0) {
-            mWaitingLatch = new CountDownLatch(dependsOnSize);
-        }
     }
 
     @Override
@@ -47,7 +43,7 @@ public abstract class LauncherTask implements ILauncherTask {
     protected abstract void call();
 
     @Override
-    public List<Class<? extends ILauncherTask>> dependsOn() {
+    public List<Class<? extends ILaunchTask>> dependsOn() {
         return null;
     }
 
@@ -57,9 +53,9 @@ public abstract class LauncherTask implements ILauncherTask {
     }
 
     private void waitToSatisfy() {
-        if (mWaitingLatch != null) {
+        if (mDependsOnLatch != null) {
             try {
-                mWaitingLatch.await();
+                mDependsOnLatch.await();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -68,30 +64,30 @@ public abstract class LauncherTask implements ILauncherTask {
 
     @Override
     public void satisfy() {
-        if (mWaitingLatch != null) {
-            mWaitingLatch.countDown();
+        if (mDependsOnLatch != null) {
+            mDependsOnLatch.countDown();
         }
     }
 
     private void notifyChildren() {
-        if (mChildTask != null && !mChildTask.isEmpty()) {
-            for (ILauncherTask task : mChildTask) {
+        if (!mChildTask.isEmpty()) {
+            for (ILaunchTask task : mChildTask) {
                 task.satisfy();
             }
         }
     }
 
     private void notifyLauncher() {
-        if (mLauncher != null) {
+        if (mContextLauncher != null) {
             if (mustFinishBeforeBreakPoint()) {
-                mLauncher.satisfyBreakPoint();
+                mContextLauncher.satisfyBreakPoint();
             }
-            mLauncher.onceTaskFinish();
+            mContextLauncher.onceTaskFinish();
         }
     }
 
     @Override
-    public void addChildTask(ILauncherTask task) {
+    public void addChildTask(ILaunchTask task) {
         mChildTask.add(task);
     }
 
@@ -107,6 +103,10 @@ public abstract class LauncherTask implements ILauncherTask {
         return output.toString();
     }
 
+    protected String getThreadName() {
+        return Thread.currentThread().getName();
+    }
+
     protected void randomSleepTest() {
         int random = new Random().nextInt(5) + 1;
         try {
@@ -118,7 +118,7 @@ public abstract class LauncherTask implements ILauncherTask {
 
     @Override
     public void attachContext(IAppLauncher launcher) {
-        mLauncher = launcher;
+        mContextLauncher = launcher;
     }
 
     @Override
@@ -133,5 +133,10 @@ public abstract class LauncherTask implements ILauncherTask {
     @Override
     public boolean mustFinishBeforeBreakPoint() {
         return false;
+    }
+
+    @Override
+    public void updateDependsCount(int count) {
+        mDependsOnLatch = new CountDownLatch(count);
     }
 }

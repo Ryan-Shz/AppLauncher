@@ -8,4 +8,6 @@ public interface TaskExecutor {
 
     void execute(Runnable runnable);
 
+    void shutdown();
+
 }

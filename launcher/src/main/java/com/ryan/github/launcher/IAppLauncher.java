@@ -15,4 +15,6 @@ public interface IAppLauncher {
     void onceTaskFinish();
 
     void start();
+
+    void shutdown();
 }
