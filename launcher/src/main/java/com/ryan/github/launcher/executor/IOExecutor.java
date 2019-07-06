@@ -1,5 +1,6 @@
 package com.ryan.github.launcher.executor;
 
+import android.os.Process;
 import android.support.annotation.NonNull;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -20,7 +21,13 @@ public class IOExecutor implements TaskExecutor {
     private ThreadPoolExecutor mExecutor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE, 10, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new ThreadFactory() {
         @Override
         public Thread newThread(@NonNull Runnable r) {
-            return new Thread(r, IO_THREAD_PREFIX + mName.incrementAndGet());
+            return new Thread(r, IO_THREAD_PREFIX + mName.incrementAndGet()){
+                @Override
+                public void run() {
+                    Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND + Process.THREAD_PRIORITY_LESS_FAVORABLE);
+                    super.run();
+                }
+            };
         }
     });
 
