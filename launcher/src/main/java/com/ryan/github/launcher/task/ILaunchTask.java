@@ -19,7 +19,7 @@ public interface ILaunchTask extends Runnable {
 
     void addChildTask(ILaunchTask task);
 
-    boolean mustFinishBeforeBreakPoint();
+    List<String> finishBeforeBreakPoints();
 
     void attachContext(IAppLauncher launcher);
 

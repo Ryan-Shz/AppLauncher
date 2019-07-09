@@ -37,7 +37,7 @@ public class MainApplication extends Application {
                         Log.v(TAG, "onIdle");
                     }
                 }).start();
-        launcher.breakPoint();
+        launcher.breakPoint(BreakPoints.TYPE_APPLICATION_CREATE);
         Log.v(TAG, "onCreate Finished.");
         launcher.shutdown();
     }

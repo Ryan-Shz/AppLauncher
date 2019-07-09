@@ -6,6 +6,7 @@ import com.ryan.github.launcher.task.LaunchTask;
 import com.ryan.github.launcher.task.ILaunchTask;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static com.ryan.github.launcher.sample.Constants.TAG;
@@ -32,7 +33,9 @@ public class SimpleLauncherTask6 extends LaunchTask {
     }
 
     @Override
-    public boolean mustFinishBeforeBreakPoint() {
-        return true;
+    public List<String> finishBeforeBreakPoints() {
+        List<String> breakPoints = new ArrayList<>(1);
+        breakPoints.add(BreakPoints.TYPE_APPLICATION_CREATE);
+        return breakPoints;
     }
 }

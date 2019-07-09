@@ -6,11 +6,11 @@ package com.ryan.github.launcher;
  */
 public interface IAppLauncher {
 
-    void breakPoint();
+    void breakPoint(String type);
 
-    void breakPoint(int timeout);
+    void breakPoint(String type, int timeout);
 
-    void satisfyBreakPoint();
+    void satisfyBreakPoint(String type);
 
     void onceTaskFinish();
 

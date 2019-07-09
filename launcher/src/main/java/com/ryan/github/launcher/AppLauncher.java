@@ -1,7 +1,6 @@
 package com.ryan.github.launcher;
 
 import com.ryan.github.launcher.executor.Executors;
-import com.ryan.github.launcher.executor.IOExecutor;
 import com.ryan.github.launcher.executor.TaskExecutor;
 import com.ryan.github.launcher.listener.IdleHandler;
 import com.ryan.github.launcher.task.ILaunchTask;
@@ -10,7 +9,9 @@ import com.ryan.github.launcher.task.TaskSortUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,12 +29,13 @@ public class AppLauncher implements IAppLauncher {
     private final AtomicInteger mFinishedCount;
     private List<ILaunchTask> mLauncherTasks;
     private IdleHandler mIdleHandler;
-    private CountDownLatch mBreakPointLatch;
+    private Map<String, CountDownLatch> mBreakPointLatchMap;
     private List<ILaunchTask> mHeadTasks;
     private List<ILaunchTask> mTailTasks;
     private Set<TaskExecutor> mExecutors;
     private boolean mShutDownAfterFinish;
-    private int mState = STATE_PREPARE;
+    private volatile int mState = STATE_PREPARE;
+    private volatile int mTaskCount;
 
     private AppLauncher() {
         mFinishedCount = new AtomicInteger(0);
@@ -53,11 +55,15 @@ public class AppLauncher implements IAppLauncher {
         }
         markState(STATE_RUNNING);
         mLauncherTasks = TaskSortUtil.getSortResult(mLauncherTasks, mHeadTasks, mTailTasks);
+        mTaskCount = mLauncherTasks.size();
         executeTasks(mLauncherTasks);
     }
 
     @Override
     public void shutdown() {
+        if (mState == STATE_SHUTDOWN) {
+            return;
+        }
         switch (mState) {
             case STATE_RUNNING:
                 mShutDownAfterFinish = true;
@@ -65,29 +71,32 @@ public class AppLauncher implements IAppLauncher {
             case STATE_FINISHED:
                 shutdownAllExecutors();
             default:
-                mState = STATE_SHUTDOWN;
+                markState(STATE_SHUTDOWN);
         }
     }
 
-    private void shutdownAllExecutors() {
+    private synchronized void shutdownAllExecutors() {
         if (mExecutors.isEmpty()) {
             return;
         }
         for (TaskExecutor executor : mExecutors) {
             executor.shutdown();
         }
+        mExecutors.clear();
+        mExecutors = null;
     }
 
     @Override
-    public void satisfyBreakPoint() {
-        if (mBreakPointLatch != null) {
-            mBreakPointLatch.countDown();
+    public void satisfyBreakPoint(String type) {
+        CountDownLatch latch = getBreakPointLatch(type);
+        if (latch != null) {
+            latch.countDown();
         }
     }
 
     @Override
     public void onceTaskFinish() {
-        if (mFinishedCount.incrementAndGet() == mLauncherTasks.size()) {
+        if (mFinishedCount.incrementAndGet() == mTaskCount) {
             markState(STATE_FINISHED);
             handleOnFinished();
         }
@@ -102,37 +111,58 @@ public class AppLauncher implements IAppLauncher {
         }
     }
 
-    private int countOfNeedWaitTask() {
+    private int countOfNeedWaitTask(String type) {
         int count = 0;
         for (ILaunchTask task : mLauncherTasks) {
-            if (task.mustFinishBeforeBreakPoint()
-                    && !task.isFinished()) {
-                ++count;
+            if (!task.isFinished()) {
+                List<String> breakPoints = task.finishBeforeBreakPoints();
+                if (breakPoints != null && breakPoints.contains(type)) {
+                    ++count;
+                }
             }
         }
         return count;
     }
 
     @Override
-    public void breakPoint() {
-        breakPoint(0);
+    public void breakPoint(String type) {
+        breakPoint(type, 0);
     }
 
     @Override
-    public void breakPoint(int timeout) {
-        int count = countOfNeedWaitTask();
+    public void breakPoint(String type, int timeout) {
+        int count = countOfNeedWaitTask(type);
         if (count > 0) {
-            mBreakPointLatch = new CountDownLatch(count);
+            CountDownLatch breakPointLatch = obtainBreakPointLatch(type, count);
             try {
                 if (timeout > 0) {
-                    mBreakPointLatch.await(timeout, TimeUnit.MILLISECONDS);
+                    breakPointLatch.await(timeout, TimeUnit.MILLISECONDS);
                 } else {
-                    mBreakPointLatch.await();
+                    breakPointLatch.await();
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private synchronized CountDownLatch obtainBreakPointLatch(String type, int count) {
+        if (mBreakPointLatchMap == null) {
+            mBreakPointLatchMap = new ConcurrentHashMap<>();
+        }
+        CountDownLatch latch = mBreakPointLatchMap.get(type);
+        if (latch == null) {
+            latch = new CountDownLatch(count);
+            mBreakPointLatchMap.put(type, latch);
+        }
+        return latch;
+    }
+
+    private CountDownLatch getBreakPointLatch(String type) {
+        if (mBreakPointLatchMap == null || mBreakPointLatchMap.isEmpty()) {
+            return null;
+        }
+        return mBreakPointLatchMap.get(type);
     }
 
     public static final class Builder {

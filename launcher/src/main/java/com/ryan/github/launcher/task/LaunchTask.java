@@ -79,8 +79,11 @@ public abstract class LaunchTask implements ILaunchTask {
 
     private void notifyLauncher() {
         if (mContextLauncher != null) {
-            if (mustFinishBeforeBreakPoint()) {
-                mContextLauncher.satisfyBreakPoint();
+            List<String> breakPoints = finishBeforeBreakPoints();
+            if (breakPoints != null && !breakPoints.isEmpty()) {
+                for (String breakPoint : breakPoints) {
+                    mContextLauncher.satisfyBreakPoint(breakPoint);
+                }
             }
             mContextLauncher.onceTaskFinish();
         }
@@ -131,12 +134,12 @@ public abstract class LaunchTask implements ILaunchTask {
     }
 
     @Override
-    public boolean mustFinishBeforeBreakPoint() {
-        return false;
+    public void updateDependsCount(int count) {
+        mDependsOnLatch = new CountDownLatch(count);
     }
 
     @Override
-    public void updateDependsCount(int count) {
-        mDependsOnLatch = new CountDownLatch(count);
+    public List<String> finishBeforeBreakPoints() {
+        return null;
     }
 }

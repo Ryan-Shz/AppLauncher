@@ -3,11 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/AppLauncher.iml" filepath="$PROJECT_DIR$/AppLauncher.iml" />
-      <module fileurl="file://C:\workplace\github\AppLauncher\AppLauncher.iml" filepath="C:\workplace\github\AppLauncher\AppLauncher.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://C:\workplace\github\AppLauncher\app\app.iml" filepath="C:\workplace\github\AppLauncher\app\app.iml" />
       <module fileurl="file://$PROJECT_DIR$/launcher/launcher.iml" filepath="$PROJECT_DIR$/launcher/launcher.iml" />
-      <module fileurl="file://C:\workplace\github\AppLauncher\launcher\launcher.iml" filepath="C:\workplace\github\AppLauncher\launcher\launcher.iml" />
     </modules>
   </component>
 </project>

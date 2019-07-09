@@ -127,28 +127,36 @@ new AppLauncher.Builder()
 
 ### 设置断点
 
-```
-launcher.breakPoint(); 
-```
+在介绍断点功能之前，我们思考这样一个令人苦恼的问题：“明明一个任务可以异步初始化，但是又要经常担心具体使用它的时候是否已经初始化完成了...为了避免出错，于是我们不得不把它放到主线程中同步初始化”。
 
-断点功能表示当前线程需要在断点处等待，直到所有设置了mustFinishBeforeBreakPoint为true的任务都执行完成后才能继续往下执行。
+就是为了解决这个问题，启动器里引入了断点功能。
 
-这有个好处，例如，你有某个任务需要在Application的onCreate方法中执行完成，那么可以这样：
-
-1. 重写LaunchTask的mustFinishBeforeBreakPoint方法
+启动器可以调用breakPoint方法来执行一个断点:
 
 ```
-public class SimpleLauncherTask extends LauncherTask {
+launcher.breakPoint(String type);
+launcher.breakPoint(String type, int timeout);
+```
+
+断点的意思是线程将在这里等待，直到所有设置了这个断点类型的task执行完成.
+
+Task可以通过重写finishBeforeBreakPoints方法来设置自己的断点类型列表，表示启动器中如果这些类型的断点在执行等待时，则必须等到它执行完成后才能继续向下执行。
+
+```
+public class SimpleLauncherTask extends LaunchTask {
 
     @Override
-    public boolean mustFinishBeforeBreakPoint() {
-    	// 返回值表示此任务是否必须在断点前执行完成
-        return true;
+    public List<String> finishBeforeBreakPoints() {
+        List<String> breakPoints = new ArrayList<>(1);
+        breakPoints.add(BreakPoints.TYPE_APPLICATION_CREATE);
+        return breakPoints;
     }
 }
 ```
 
-2. 在Application onCreate方法的末尾调用launcher.breakPoint()
+这有个好处，例如，你有某个任务必须需要在Application的onCreate方法中执行完成，那么可以这样：
+
+1. 在Application onCreate方法的末尾调用launcher.breakPoint(String type)
 
 ```
 public class MainApplication extends Application {
@@ -157,28 +165,42 @@ public class MainApplication extends Application {
     public void onCreate() {
         super.onCreate();
         AppLauncher launcher = new AppLauncher.Builder()
-                .addTask(new SimpleLauncherTask7())
-                .addTask(new SimpleLauncherTask2())
-                .addTask(new SimpleLauncherTask3())
                 .addTask(new SimpleLauncherTask1())
-                .addTask(new SimpleLauncherTask4())
-                .addTask(new SimpleLauncherTask6())
-                .addTask(new SimpleLauncherTask5())
+                .addTask(new SimpleLauncherTask2())
+                .addTask(new SimpleLauncherTask3())        
                 .start();
                 
         // ...do something
         
-        // 在这里等待，直到所有标记mustFinishBeforeBreakPoint为true的task执行完成
-        launcher.breakPoint();
+        // 在这里等待，直到所有设置了BreakPoints.TYPE_APPLICATION_CREATE类型的task执行完成
+        launcher.breakPoint(BreakPoints.TYPE_APPLICATION_CREATE);
         
-        // 如果你担心等待太久的话，可以执行auncher.breakPoint(int timeout)
+        // 如果你担心等待太久的话，可以执行launcher.breakPoint(String type, int timeout)
         // 传入等待超时时间，等待指定的时间后会继续向下执行
-        // eg: launcher.breakPoint(1000);
+        // eg: launcher.breakPoint(BreakPoints.TYPE_APPLICATION_CREATE， 1000);
         
         Log.v(TAG, "application onCreate Finished.");
     }
 }
 ```
+
+2. 重写LaunchTask的finishBeforeBreakPoints方法，返回断点类型列表：
+
+```
+public class SimpleLauncheTask extends LauncherTask {
+
+    @Override
+    public List<String> finishBeforeBreakPoints() {
+        List<String> breakPoints = new ArrayList<>(1);
+        breakPoints.add(BreakPoints.TYPE_APPLICATION_CREATE);
+        return breakPoints;
+    }
+}
+```
+
+在SimpleLaunchTask任务执行完成之前，application的onCreate将会一直等待。
+
+是不是很简单呢？
 
 ###  IdleHandler
 
