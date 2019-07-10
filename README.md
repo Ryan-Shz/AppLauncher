@@ -125,6 +125,19 @@ new AppLauncher.Builder()
             .start();
 ```
 
+### 添加DelayTask
+
+有时候，我们会有一些优先级不是那么高的Task，我们想让它在启动后延迟执行，并且对当前应用的影响降到最低。
+
+为了解决这个问题，我们引入了DelayTask，DelayTask会等待所有Task执行完成并且在主线程空闲时执行。
+
+```
+new AppLauncher.Builder()
+            .addTask(new SimpleLauncherTask1())
+            .addDelayTask(new SimpleLaunchrTask2())
+            .start();
+```
+
 ### 设置断点
 
 在介绍断点功能之前，我们思考这样一个令人苦恼的问题：“明明一个任务可以异步初始化，但是又要经常担心具体使用它的时候是否已经初始化完成了...为了避免出错，于是我们不得不把它放到主线程中同步初始化”。

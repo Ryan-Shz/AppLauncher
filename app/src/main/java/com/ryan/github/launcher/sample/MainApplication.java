@@ -31,6 +31,7 @@ public class MainApplication extends Application {
                 .addHeadTask(new SimpleLauncherTask10())
                 .addHeadTask(new SimpleLauncherTask11())
                 .addTailTask(new SimpleLauncherTask12())
+                .addDelayTask(new SimpleLauncherTask13())
                 .idleHandler(new IdleHandler() {
                     @Override
                     public void onIdle() {
@@ -39,6 +40,5 @@ public class MainApplication extends Application {
                 }).start();
         launcher.breakPoint(BreakPoints.TYPE_APPLICATION_CREATE);
         Log.v(TAG, "onCreate Finished.");
-        launcher.shutdown();
     }
 }

@@ -1,7 +1,7 @@
 package com.ryan.github.launcher.sample;
 
 /**
- * Created by Ryan(11091468)
+ * Created by Ryan
  * at 2019/7/9
  */
 class BreakPoints {

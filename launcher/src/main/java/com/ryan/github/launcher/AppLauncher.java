@@ -1,5 +1,8 @@
 package com.ryan.github.launcher;
 
+import android.os.Looper;
+import android.os.MessageQueue;
+
 import com.ryan.github.launcher.executor.Executors;
 import com.ryan.github.launcher.executor.TaskExecutor;
 import com.ryan.github.launcher.listener.IdleHandler;
@@ -8,8 +11,10 @@ import com.ryan.github.launcher.task.TaskSortUtil;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -32,8 +37,10 @@ public class AppLauncher implements IAppLauncher {
     private Map<String, CountDownLatch> mBreakPointLatchMap;
     private List<ILaunchTask> mHeadTasks;
     private List<ILaunchTask> mTailTasks;
+    private Queue<ILaunchTask> mDelayTasks;
     private Set<TaskExecutor> mExecutors;
     private boolean mShutDownAfterFinish;
+    private MessageQueue mMainQueue;
     private volatile int mState = STATE_PREPARE;
     private volatile int mTaskCount;
 
@@ -44,6 +51,7 @@ public class AppLauncher implements IAppLauncher {
 
     @Override
     public void start() {
+        checkThread();
         if (mState == STATE_SHUTDOWN) {
             throw new IllegalStateException("the Launcher has been shut down.");
         }
@@ -52,6 +60,9 @@ public class AppLauncher implements IAppLauncher {
         }
         if (mState == STATE_RUNNING) {
             return;
+        }
+        if (mMainQueue == null) {
+            mMainQueue = Looper.myQueue();
         }
         markState(STATE_RUNNING);
         mLauncherTasks = TaskSortUtil.getSortResult(mLauncherTasks, mHeadTasks, mTailTasks);
@@ -99,6 +110,7 @@ public class AppLauncher implements IAppLauncher {
         if (mFinishedCount.incrementAndGet() == mTaskCount) {
             markState(STATE_FINISHED);
             handleOnFinished();
+            handDelayTasks();
         }
     }
 
@@ -109,6 +121,23 @@ public class AppLauncher implements IAppLauncher {
         if (mShutDownAfterFinish) {
             shutdown();
         }
+    }
+
+    private void handDelayTasks() {
+        if (mMainQueue == null || mState == STATE_PREPARE) {
+            throw new IllegalStateException("The launcher has not started yet.");
+        }
+        if (mState == STATE_SHUTDOWN){
+            throw new IllegalStateException("The launcher has been shut down.");
+        }
+        mMainQueue.addIdleHandler(new MessageQueue.IdleHandler() {
+            @Override
+            public boolean queueIdle() {
+                ILaunchTask task = mDelayTasks.poll();
+                executeTasks(task);
+                return !mDelayTasks.isEmpty();
+            }
+        });
     }
 
     private int countOfNeedWaitTask(String type) {
@@ -171,11 +200,13 @@ public class AppLauncher implements IAppLauncher {
         private IdleHandler mIdleHandler;
         private List<ILaunchTask> mHeadTasks;
         private List<ILaunchTask> mTailTasks;
+        private Queue<ILaunchTask> mDelayTasks;
 
         public Builder() {
             mLauncherTasks = new ArrayList<>();
             mHeadTasks = new ArrayList<>();
             mTailTasks = new ArrayList<>();
+            mDelayTasks = new LinkedList<>();
         }
 
         public Builder addTask(ILaunchTask task) {
@@ -198,12 +229,18 @@ public class AppLauncher implements IAppLauncher {
             return this;
         }
 
+        public Builder addDelayTask(ILaunchTask task) {
+            mDelayTasks.offer(task);
+            return this;
+        }
+
         public AppLauncher create() {
             AppLauncher launcher = new AppLauncher();
             launcher.mLauncherTasks = mLauncherTasks;
             launcher.mIdleHandler = mIdleHandler;
             launcher.mHeadTasks = mHeadTasks;
             launcher.mTailTasks = mTailTasks;
+            launcher.mDelayTasks = mDelayTasks;
             return launcher;
         }
 
@@ -221,10 +258,20 @@ public class AppLauncher implements IAppLauncher {
 
     private void executeTasks(List<ILaunchTask> tasks) {
         for (ILaunchTask task : tasks) {
-            task.attachContext(this);
-            TaskExecutor executor = Executors.get(task.runOn());
-            mExecutors.add(executor);
-            executor.execute(task);
+            executeTasks(task);
+        }
+    }
+
+    private void executeTasks(ILaunchTask task) {
+        task.attachContext(this);
+        TaskExecutor executor = Executors.get(task.runOn());
+        mExecutors.add(executor);
+        executor.execute(task);
+    }
+
+    private void checkThread() {
+        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+            throw new IllegalStateException("AppLauncher.start() must be executed on the main thread.");
         }
     }
 }
