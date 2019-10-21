@@ -34,7 +34,7 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        AppLauncher launcher = new AppLauncher.Builder()
+        new AppLauncher.Builder()
                 .addTask(new SimpleLauncherTask7())
                 .addTask(new SimpleLauncherTask2())
                 .addTask(new SimpleLauncherTask3())
