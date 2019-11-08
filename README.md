@@ -1,4 +1,4 @@
-g# AppLauncher
+# AppLauncher
 
 [ ![Download](https://api.bintray.com/packages/ryan-shz/Ryan/applauncher/images/download.svg) ](https://bintray.com/ryan-shz/Ryan/applauncher/_latestVersion)![](https://img.shields.io/badge/license-MIT-green)
 
