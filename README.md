@@ -13,6 +13,10 @@ AppLauncher把初始化任务划分为一个个细小的LaunchTask，task之间�
 启动器在启动时，会根据所有任务的依赖关系构建一个有向无环图并生成拓扑序列，根据该序列使用多线程执行。
 
 ## Quick Start
+### 导入
+```
+implementation "com.ryan.github:applauncher:1.0.0"
+```
 
 ### 创建一个Task
 
