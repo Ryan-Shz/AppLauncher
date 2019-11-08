@@ -1,0 +1,16 @@
+apply plugin: 'com.novoda.bintray-release'
+
+//添加
+publish {
+    userOrg = 'ryan-shz'
+    repoName = 'Ryan'
+    groupId = 'com.ryan.github'
+    artifactId = 'applauncher'
+    publishVersion = '1.0.0'
+    desc = 'AppLauncher是一个轻量级的Android App的任务启动器。它是一个优秀的异步初始化解决方案，用来方便、快速的帮助APP处理异步初始化来达到应用启动的最佳性能。'
+    website = 'https://github.com/Ryan-Shz/AppLauncher'
+}
+
+tasks.withType(Javadoc).all {
+    enabled = false
+}
