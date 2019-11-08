@@ -1,4 +1,6 @@
-# AppLauncher
+g# AppLauncher
+
+[ ![Download](https://api.bintray.com/packages/ryan-shz/Ryan/applauncher/images/download.svg) ](https://bintray.com/ryan-shz/Ryan/applauncher/_latestVersion)![](https://img.shields.io/badge/license-MIT-green)
 
 AppLauncher是一个轻量的Android App的任务启动器。
 
@@ -10,7 +12,7 @@ AppLauncher把初始化任务划分为一个个细小的LaunchTask，task之间�
 
 启动器在启动时，会根据所有任务的依赖关系构建一个有向无环图并生成拓扑序列，根据该序列使用多线程执行。
 
-## Sample
+## Quick Start
 
 ### 创建一个Task
 
@@ -49,7 +51,7 @@ public class MainApplication extends Application {
 
 好了，这样就可以完成启动初始化了，是不是很简单呢？
 
-## 其他用法
+## 高级用法
 
 ### 设置Task依赖
 
